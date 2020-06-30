@@ -1,0 +1,9 @@
+/* Monospace font */
+::placeholder, body, button, input, select, textarea {
+  font-family: mono;
+}
+
+/* 80 textwidth */
+.messageCompact-kQa7ES {
+  width: 80em;
+}
