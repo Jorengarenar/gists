@@ -1,7 +1,6 @@
 // Simple strong typedef
 #define STRONG_TYPEDEF(T, D)                                 \
-    class D : public T {                                     \
-    public:                                                  \
+    struct D : public T {                                    \
         template<class... A> explicit D(A... a) : T(a...) {} \
         const T& raw() const { return *this; }               \
     }
