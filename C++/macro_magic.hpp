@@ -7,8 +7,8 @@
 
 // Use the block of code following the macro in the macro
 #define BLOCK(var) \
-    for (bool flag = true; flag; ) \
-        for (typeof(var) foo = var; flag; flag = false)
+    for (bool var_#flag = true; flag; ) \
+        for (typeof(var) foo = var; var_#flag; var_#flag = false)
 
 // Alternative version of above
 #define BLOCK2(var) \
