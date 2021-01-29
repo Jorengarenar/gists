@@ -1,6 +1,0 @@
-/* Fork button on GitHub is for making Pull Requests
- * It doesn't have the same meaning as fork in: "Neovim is a fork of Vim"
- */
-.pagehead-actions summary[title~="Fork"]:after {
-  content: "for PR";
-}
