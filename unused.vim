@@ -54,7 +54,78 @@ endfunction
 " C/C++ preprocessor defined macros
 autocmd filetype c,cpp autocmd VimEnter,InsertEnter,InsertLeave * call <SID>HighlightC_PreProcDefines()
 
+" COBOL fold expr {{{2
+
+setlocal foldexpr=CobolFold()
+
+function! CobolFold() abort
+  let marker = utils#markerFoldExpr(5)
+  if marker != "=" | return marker | endif
+
+  let line = getline(v:lnum)
+
+  let s:paragraph = get(s: "paragraph", 1)
+
+  if line =~? '\v^%(%(\s|\d){6})?[/*]'
+    return "="
+  endif
+
+  if line =~? 'DIVISION'
+    let s:paragraph = 2
+    return ">1"
+  elseif line =~? 'SECTION'
+    let s:paragraph = 3
+    return ">2"
+  elseif line =~? '\v^%(%(\s|\d){6}.)?\w\k*\w\.$'
+    return ">". s:paragraph
+  endif
+
+  if line =~? '\v<%(EVALUATE|IF|PERFORM UNTIL|READ)>'
+    return "a1"
+  elseif line =~? '\v<END-%(EVALUATE|IF|PERFORM|READ)>'
+    return "s1"
+  endif
+
+  return "="
+endfunction
+
+" COBOL fold syntax {{{2
+
+syn region cobolIdDivFold  transparent fold
+     \ start = '\v%(IDENTIFICATION DIVISION)@<=\.'
+     \ end   = '\n\ze.*DIVISION'
+
+syn region cobolSectionFold  transparent fold
+      \ start = '\v%(SECTION)@<=\.'
+      \ end   = '\n\ze.*SECTION\.'
+      \ end   = '\n\ze.*DIVISION'
+
+syn region cobolParagraphFold  transparent fold
+      \ start = '\v%(^%(%(\s|\d){6}.)?\k+)@<=\.$'
+      \ end   = '\v\n\ze^%(%(\s|\d){6}.)?\k+\.$'
+      \ end   = '\n\ze.*SECTION\.'
+      \ end   = '\n\ze.*DIVISION'
+
+function! s:foo(kw, ...) abort
+  exec 'syntax region cobol_' . a:kw . '_Fold transparent fold'
+        \ . ' start = "\v(<' . a:kw . ')@<=\s' . get(a:, 1, '') . '"'
+        \ . ' skip  = "\v^%(%(\s|\d){6}|\s*)?[*/C].*"'
+        \ . ' end   = "\ze\<END-' . a:kw . '\>"'
+endfunction
+
+call s:foo('IF')
+call s:foo('PERFORM', '\ze\s*UNTIL>')
+call s:foo('READ')
+call s:foo('EVALUATE')
+
+syn cluster cobolFolds contains=cobol.*Fold
+
 " PLUGIN CONFIG {{{1
+" TermDebug {{{2
+
+packadd termdebug
+command! -nargs=* TermDebug normal! :Termdebug <args><CR><C-w>K<C-w>j<C-w>L
+
 " ALE {{{2
 
 let g:ale_disable_lsp     = 1
@@ -90,6 +161,7 @@ function! s:lsp_init() abort
   if exists('+tagfunc') | setlocal tagfunc=lsp#tagfunc | endif
   nmap <buffer> gd <plug>(lsp-definition)
   nmap <buffer> gR <Plug>(lsp-rename)
+  nmap <buffer> gK <plug>(lsp-hover)
 endfunction
 
 augroup LSP
@@ -239,3 +311,23 @@ let g:ycm_semantic_triggers = {
             \ 'sql'         : ['re!\w', '.'],
             \ 'vim'         : ['re!\w'],
             \ }
+" OmniCppComplete {{{2
+
+let OmniCpp_GlobalScopeSearch   = 1
+let OmniCpp_LocalSearchDecl     = 1
+let OmniCpp_MayCompleteArrow    = 0
+let OmniCpp_MayCompleteDot      = 0
+let OmniCpp_ShowAccess          = 1
+let OmniCpp_ShowPrototypeInAbbr = 1
+
+" C++
+let OmniCpp_DefaultNamespaces = [ "std", "_GLIBCXX_STD", "_GLIBCXX_STD_A", "_GLIBCXX_STD_C", "::" ]
+let OmniCpp_DisplayMode       = 1
+let OmniCpp_NamespaceSearch   = 1
+" JavaComplete {{{2
+
+if exists('g:JavaComplete_PluginLoaded')
+  setlocal omnifunc=javacomplete#Complete
+  let g:JavaComplete_EnableDefaultMappings = 0
+  let g:JavaComplete_BaseDir = "$XDG_CACHE_HOME"
+endif
